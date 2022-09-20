@@ -1,17 +1,19 @@
-FROM golang:1.19-alpine3.16 as builder
+FROM ubuntu:22.10
 
-WORKDIR /builder
-COPY . .
-RUN CGO_ENABLED=0 go build -o auditlogger
+RUN adduser tools && \
+    apt update && \
+    apt install -y postgresql-client curl gettext
 
-#---#
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+    mv ./kubectl /usr/local/bin/kubectl && \
+    chmod +x /usr/local/bin/kubectl
 
-FROM alpine:3.16 as runner
+RUN curl -LO https://github.com/mikefarah/yq/releases/download/v4.27.5/yq_linux_arm64 && \
+    mv yq_linux_arm64 /usr/local/bin/yq && \
+    chmod +x /usr/local/bin/yq
 
-RUN adduser -D runner
-USER runner
-WORKDIR /home/runner
+USER tools
+WORKDIR /tools
 
-COPY --from=builder /builder/auditlogger /usr/local/bin/auditlogger
-
-ENTRYPOINT [ "/usr/local/bin/auditlogger" ]
+COPY --chown=tools:tools *.sql .
+COPY --chown=tools:tools program.sh .
