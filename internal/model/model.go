@@ -7,3 +7,8 @@ type AuditData struct {
 	Offset *string           `json:"offset"`
 	Data   []json.RawMessage `json:"data"`
 }
+
+type PartialAuditEntry struct {
+	ID        *string `json:"id"`
+	RequestID *string `json:"request_id"`
+}

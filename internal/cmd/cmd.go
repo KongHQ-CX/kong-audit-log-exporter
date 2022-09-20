@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -44,10 +45,23 @@ func Cmd(kongAdminURL, kongAdminToken, storageNamespace string) {
 	objectOffset = ExecuteEndpoint(kongAdminURL, kongAdminToken, "/audit/objects", objectOffset)
 	requestOffset = ExecuteEndpoint(kongAdminURL, kongAdminToken, "/audit/requests", requestOffset)
 
-	kube.CreateSecretExternal(map[string][]byte{
-		"OBJECT_OFFSET":  []byte(*objectOffset),
-		"REQUEST_OFFSET": []byte(*requestOffset),
-	}, "audit-logger-tracking", storageNamespace)
+	// Only apply any offset that has changed
+	if objectOffset == nil && requestOffset == nil {
+		// nothing
+	} else if objectOffset == nil {
+		kube.CreateSecretExternal(map[string][]byte{
+			"REQUEST_OFFSET": []byte(*requestOffset),
+		}, "audit-logger-tracking", storageNamespace)
+	} else if requestOffset == nil {
+		kube.CreateSecretExternal(map[string][]byte{
+			"REQUEST_OFFSET": []byte(*requestOffset),
+		}, "audit-logger-tracking", storageNamespace)
+	} else {
+		kube.CreateSecretExternal(map[string][]byte{
+			"OBJECT_OFFSET":  []byte(*objectOffset),
+			"REQUEST_OFFSET": []byte(*requestOffset),
+		}, "audit-logger-tracking", storageNamespace)
+	}
 }
 
 func ExecuteEndpoint(kongAdminURL, kongAdminToken, endpoint string, offset *string) *string {
@@ -89,14 +103,38 @@ func ExecuteEndpoint(kongAdminURL, kongAdminToken, endpoint string, offset *stri
 		auditData := &model.AuditData{}
 		json.Unmarshal(body, auditData)
 
-		// fmt.Println(*auditData.Offset)
+		if len(auditData.Data) < 1 {
+			// Do nothing
+			return nil
+		}
+
+		// if auditData.Offset != nil {
+		// 	fmt.Println(*auditData.Offset)
+		// }
 		for _, v := range auditData.Data {
 			fmt.Printf("%s\n", v)
 		}
 
 		if auditData.Offset == nil {
-			return offset
+			// Get the ID of the last record in the last results
+			record := auditData.Data[len(auditData.Data)-1]
+			recordStruct := model.PartialAuditEntry{}
+			json.Unmarshal([]byte(record), &recordStruct)
+
+			var offsetID string
+			if recordStruct.ID != nil {
+				offsetID = *recordStruct.ID
+			} else {
+				offsetID = *recordStruct.RequestID
+			}
+
+			// Base64 it in format ["id"]
+			newOffset := b64.RawStdEncoding.EncodeToString([]byte(fmt.Sprintf(`["%s"]`, offsetID)))
+
+			// Return
+			return &newOffset
 		} else {
+			// Continue in loop
 			offset = auditData.Offset
 		}
 	}
