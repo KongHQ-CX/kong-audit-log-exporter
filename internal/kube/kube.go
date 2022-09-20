@@ -15,6 +15,31 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
+func GetSecretInternal(name, namespace string) (*map[string][]byte, error) {
+	// creates the in-cluster config
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err.Error())
+	}
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	secretsClient := clientset.CoreV1().Secrets(namespace)
+
+	secret, err := secretsClient.Get(context.TODO(), name, metav1.GetOptions{})
+
+	if errors.IsNotFound(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &secret.Data, nil
+}
+
 func GetSecretExternal(name, namespace string) (*map[string][]byte, error) {
 	var kubeconfig string
 	if home := homedir.HomeDir(); home != "" {
