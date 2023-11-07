@@ -1,0 +1,7 @@
+apiVersion: v2
+name: audit-log-exporter
+description: Exports Kong Audit Logs to either stdout or a HTTP endpoint.
+#
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

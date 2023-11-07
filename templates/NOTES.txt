@@ -1,0 +1,4 @@
+
+Application is deployed!
+
+You should see audit logs appearing at the configured endpoint: {{ .Values.configuration.http.endpoint }}

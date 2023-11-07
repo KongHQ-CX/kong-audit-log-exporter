@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "audit-log-exporter.fullname" . }}
+  labels:
+    {{- include "audit-log-exporter.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "audit-log-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "audit-log-exporter.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "audit-log-exporter.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: RUN_MODE
+              value: "{{ .Values.configuration.mode }}"
+            - name: HTTP_ENDPOINT
+              value: "{{ .Values.configuration.http.endpoint }}"
+            - name: HTTP_HEADER_NAME
+              value: "{{ .Values.configuration.http.header.name }}"
+            - name: HTTP_HEADER_VALUE
+              value: "{{ .Values.configuration.http.header.value }}"
+            - name: HTTP_EVENT_KEY
+              value: "{{ .Values.configuration.http.eventKey }}"
+            - name: KONG_PG_DATABASE
+              value: "{{ .Values.configuration.postgres.database }}"
+            - name: KONG_PG_HOST
+              value: "{{ .Values.configuration.postgres.host }}"
+            - name: KONG_PG_USER
+              value: "{{ .Values.configuration.postgres.username }}"
+            - name: KONG_PG_PASSWORD
+              value: "{{ .Values.configuration.postgres.password }}"
+            - name: STORAGE_NAMESPACE
+              value: "{{ .Values.configuration.storageNamespace }}"
+            - name: RUN_INTERVAL_SECONDS
+              value: "{{ .Values.configuration.runIntervalSeconds }}"
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "audit-log-exporter.fullname" . }}
+  labels:
+    {{- include "audit-log-exporter.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "audit-log-exporter.fullname" . }}
+  apiGroup: ""
+roleRef:
+  kind: Role
+  name: {{ include "audit-log-exporter.fullname" . }}
+  apiGroup: ""
