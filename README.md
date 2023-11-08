@@ -35,7 +35,7 @@ First, you need to create a `values-override.yaml` file and change some settings
 
 ```yaml
 configuration:
-  storageNamespace: kong  # this defines which namespace will store the 'tracking' record, which tells the program its last run time
+  storageNamespace: kong  # this defines which namespace will store the 'tracking' record, which tells the program its last run time; just set it to the same namespace this program is going into
   runIntervalSeconds: 300  # run interval; on each 'run', the Kubernetes secret is updated, so keep this realistic (e.g. 5 minutes here)
   mode: http  # choices are http or stdout; 'stdout' prints straight to the console, so you can just scrape the data with e.g. fluent-bit
   http:
