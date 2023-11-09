@@ -12,7 +12,7 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
     chmod +x /usr/local/bin/kubectl
 
 RUN curl -LO "https://github.com/mikefarah/yq/releases/download/v4.27.5/yq_linux_${ARCH}" && \
-    mv yq_linux_arm64 /usr/local/bin/yq && \
+    mv yq_linux_${ARCH} /usr/local/bin/yq && \
     chmod +x /usr/local/bin/yq
 
 USER tools
