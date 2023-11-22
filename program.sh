@@ -40,6 +40,7 @@ do
 
     psql -U $KONG_PG_USER -h $KONG_PG_HOST -d $KONG_PG_DATABASE --single-transaction --set AUTOCOMMIT=off --set ON_ERROR_STOP=on --no-align -t --field-separator ' ' --quiet -P pager=off -f /tmp/objects_statement.sql | while read -r RECORD
     do
+      echo "--> New object records to POST"
       NEW_RECORD=$(echo $RECORD | yq -P eval -o=json -I=0 '.event = strenv(HTTP_EVENT_KEY)' -)
       if ! curl -s -H 'Content-Type: application/json' -H "$HTTP_HEADER_NAME: $HTTP_HEADER_VALUE" -d "$NEW_RECORD" $HTTP_ENDPOINT
       then
@@ -54,6 +55,7 @@ do
     
     psql -U $KONG_PG_USER -h $KONG_PG_HOST -d $KONG_PG_DATABASE --single-transaction --set AUTOCOMMIT=off --set ON_ERROR_STOP=on --no-align -t --field-separator ' ' --quiet -P pager=off -f /tmp/requests_statement.sql | while read -r RECORD
     do
+      echo "--> New request records to POST"
       NEW_RECORD=$(echo $RECORD | yq -P eval -o=json -I=0 '.event = strenv(HTTP_EVENT_KEY)' -)
       if ! curl -s -H 'Content-Type: application/json' -H "$HTTP_HEADER_NAME: $HTTP_HEADER_VALUE" -d "$NEW_RECORD" $HTTP_ENDPOINT
       then
