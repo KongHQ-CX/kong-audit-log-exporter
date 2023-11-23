@@ -1,13 +1,14 @@
 configuration:
   storageNamespace: kong
-  runIntervalSeconds: 1800
+  runIntervalSeconds: 5
   mode: http  # choices are http or stdout
   http:
-    endpoint: http://audit-log-receiver:8080/v1/logs
+    endpoint: http://echo-print-body:8080/v1/logs
     header:
       name: "Authorization"
       value: "Splunk PLACEHOLDER"
     eventKey: "kong-audit-logs"
+    index: 
   postgres:
     database: kong
     host: control-plane-postgresql
@@ -15,7 +16,7 @@ configuration:
     password: kong
 
 image:
-  repository: registry.stg.jackgpt.co.uk
+  repository: registry.stg.jackgpt.co.uk/audit-log-exporter
   tag: latest 
   pullPolicy: Always
 
@@ -53,7 +54,5 @@ resources: {}
   #   memory: 128Mi
 
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}

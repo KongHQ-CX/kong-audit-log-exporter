@@ -44,6 +44,8 @@ spec:
               value: "{{ .Values.configuration.http.header.value }}"
             - name: HTTP_EVENT_KEY
               value: "{{ .Values.configuration.http.eventKey }}"
+            - name: INDEX
+              value: "{{ .Values.configuration.http.index }}"
             - name: KONG_PG_DATABASE
               value: "{{ .Values.configuration.postgres.database }}"
             - name: KONG_PG_HOST

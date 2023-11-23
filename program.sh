@@ -5,6 +5,7 @@ echo "-> STARTING UP"
 export PGPASSWORD=$KONG_PG_PASSWORD
 export RUN_INTERVAL=${RUN_INTERVAL_SECONDS:-5}
 export TRACKING_SECRET_NAME="audit-log-exporter-storage-tracking"
+export HOSTNAME=$(hostname)
 
 ## Uncomment these two lines for running from your desktop (for example after "kdev-admin") - remember to set Kong DB parameters at the top of the Makefile
 # mkdir -p ~/.kube
@@ -40,8 +41,15 @@ do
 
     psql -U $KONG_PG_USER -h $KONG_PG_HOST -d $KONG_PG_DATABASE --single-transaction --set AUTOCOMMIT=off --set ON_ERROR_STOP=on --no-align -t --field-separator ' ' --quiet -P pager=off -f /tmp/objects_statement.sql | while read -r RECORD
     do
+      export RECORD="$RECORD"
+
       echo "--> New object records to POST"
-      NEW_RECORD=$(echo $RECORD | yq -P eval -o=json -I=0 '.event = strenv(HTTP_EVENT_KEY)' -)
+
+      export RECORD="$RECORD"
+
+      NEW_RECORD=$(yq -o=json -I=0 --null-input '(.event = strenv(RECORD)) | (.index = strenv(INDEX)) | (.host = strenv(HOSTNAME)) | (.source = "kong-audit-logs-objects")')
+
+      echo "--> NEW RECORD: $NEW_RECORD"
       if ! curl -s -H 'Content-Type: application/json' -H "$HTTP_HEADER_NAME: $HTTP_HEADER_VALUE" -d "$NEW_RECORD" $HTTP_ENDPOINT
       then
         echo "--> FAIL: Could not send last request, quitting for safety"
@@ -56,7 +64,10 @@ do
     psql -U $KONG_PG_USER -h $KONG_PG_HOST -d $KONG_PG_DATABASE --single-transaction --set AUTOCOMMIT=off --set ON_ERROR_STOP=on --no-align -t --field-separator ' ' --quiet -P pager=off -f /tmp/requests_statement.sql | while read -r RECORD
     do
       echo "--> New request records to POST"
-      NEW_RECORD=$(echo $RECORD | yq -P eval -o=json -I=0 '.event = strenv(HTTP_EVENT_KEY)' -)
+
+      export RECORD="$RECORD"
+      NEW_RECORD=$(yq -o=json -I=0 --null-input '(.event = strenv(RECORD)) | (.index = strenv(INDEX)) | (.host = strenv(HOSTNAME)) | (.source = "kong-audit-logs-requests")')
+
       if ! curl -s -H 'Content-Type: application/json' -H "$HTTP_HEADER_NAME: $HTTP_HEADER_VALUE" -d "$NEW_RECORD" $HTTP_ENDPOINT
       then
         echo "--> FAIL: Could not send last request, quitting for safety"
