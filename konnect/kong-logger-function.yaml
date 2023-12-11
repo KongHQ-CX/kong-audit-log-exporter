@@ -1,0 +1,31 @@
+_format_version: "3.0"
+
+routes:
+- name: "audit-null-route"
+  paths:
+  - "~/audit-logs$"
+  protocols:
+  - "https"
+  - "http"
+  plugins:
+  - name: post-function
+    config:
+      access:
+      - |-
+        kong.ctx.plugin.audit_body = kong.request.get_raw_body()
+        kong.response.exit(200, { created = true })
+      header_filter:
+      - |-
+        kong.log.set_serialize_value("request", nil)
+        kong.log.set_serialize_value("response", nil)
+        kong.log.set_serialize_value("workspace", nil)
+        kong.log.set_serialize_value("latencies", nil)
+        kong.log.set_serialize_value("route", nil)
+        kong.log.set_serialize_value("service", nil)
+        kong.log.set_serialize_value("tries", nil)
+        kong.log.set_serialize_value("upstream_status", nil)
+        kong.log.set_serialize_value("upstream_uri", nil)
+        kong.log.set_serialize_value("audit_payload", kong.ctx.plugin.audit_body)
+  - name: file-log
+    config:
+      path: "/dev/stdout"

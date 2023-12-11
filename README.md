@@ -2,9 +2,43 @@
 
 Logs all entries from the audit tables to stdout stream, for ingest by Filebeat, or pushing to a HTTP endpoint like Splunk HEC.
 
-## Installation
+## Installation - Konnect
 
-The install requires three separate parts.
+For Konnect-based installations, you should use an [audit log webhook](https://docs.konghq.com/konnect/org-management/audit-logging/webhook/)
+
+This requires a HTTPS endpoint, hosted by you (or in your cloud), that will receive the JSON-format payload events.
+
+In this repository, we provide two examples:
+
+### Example 1 - Kong Serverless Function
+
+This is a "service-less" route that simply received the payload, and prints it to the Kong data-plane log. This allows you to host the audit payload receiver directly on one of your Kong runtime group data plane deployments, with no extra hardware.
+
+Your existing log scraper can pick this up, where you can then search through it later.
+
+It sets up a route in your Kong data plane at "https://{kong_hostname}/audit-logs" which can be configured as the payload target for audit webhooks, inside the Konnect UI.
+
+When it's running correctly, you should receive audit log statements in the Kong logs for this data-plane, which look like:
+
+```
+{"started_at":1702295653851,"client_ip":"10.42.0.1","audit_payload":"{\n  \"user\": \"jackt\",\n  \"action\": \"CREATE\",\n  \"object\": \"{\\\"type\\\":\\\"route\\\",\\\"name\\\":\\\"echo-server\\\"\"\n}\n\n"}
+```
+
+[The deck file is located here](./konnect/kong-logger-function.yaml)
+
+### Example 2 - Lambda Function
+
+This is a Python program that can be hosted as e.g. an AWS Lambda function, or Azure Container App.
+
+It requires some load balancer or network exposure in order to actually receive the events from the Konnect Cloud.
+
+[The Python script is located here](./konnect/python-lambda-print-audits.py)
+
+[There is also an all-in-one Kube deployment, to help get started](./konnect/python-lambda-print-audits-kube-deployment.yaml)
+
+## Installation - On-Prem
+
+This install requires three separate parts.
 
 ### 1. Create a Read-Only Postgres User
 
