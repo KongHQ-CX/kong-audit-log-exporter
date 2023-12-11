@@ -33,6 +33,8 @@ This repository is also a barebones Helm chart. It can be installed by specifyin
 
 First, you need to create a `values-override.yaml` file and change some settings specific to your environment:
 
+#### HTTP Endpoint Example:
+
 ```yaml
 configuration:
   storageNamespace: kong  # this defines which namespace will store the 'tracking' record, which tells the program its last run time; just set it to the same namespace this program is going into
@@ -45,6 +47,27 @@ configuration:
       name: "Authorization"
       value: "Splunk PLACEHOLDER"
     eventKey: "kong-audit-logs"  # this is specific to Splunk, and adds the JSON key "event" to each POST datum
+  postgres:
+    ## In this block, enter credentials to be able to read postgres tables 'audit_objects' and 'audit_requests'
+    database: kong
+    host: control-plane-postgresql.kong.svc.cluster.local
+    username: kong
+    password: kong
+
+image:
+  ## Finally, adjust the image section to point to your private registry; use pullSecret if registry authentication is required
+  repository: registry.my.local/audit-log-exporter
+  tag: latest 
+  pullPolicy: Always
+```
+
+#### Console Output Example:
+
+```yaml
+configuration:
+  storageNamespace: kong  # this defines which namespace will store the 'tracking' record, which tells the program its last run time; just set it to the same namespace this program is going into
+  runIntervalSeconds: 300  # run interval; on each 'run', the Kubernetes secret is updated, so keep this realistic (e.g. 5 minutes here)
+  mode: stdout
   postgres:
     ## In this block, enter credentials to be able to read postgres tables 'audit_objects' and 'audit_requests'
     database: kong
