@@ -12,7 +12,7 @@ routes:
     config:
       access:
       - |-
-        kong.ctx.plugin.audit_body = kong.request.get_raw_body()
+        kong.ctx.plugin.audit_body = kong.request.get_body("application/json")
         kong.response.exit(200, { created = true })
       header_filter:
       - |-
