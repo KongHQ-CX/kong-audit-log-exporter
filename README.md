@@ -18,6 +18,18 @@ Your existing log scraper can pick this up, where you can then search through it
 
 It sets up a route in your Kong data plane at "https://{kong_hostname}/audit-logs" which can be configured as the payload target for audit webhooks, inside the Konnect UI.
 
+**For this to work, you need to add TWO packages into the Lua trusted sandbox:**
+
+```yaml
+untrusted_lua_sandbox_requires: "kong.tools.utils,kong.tools.gzip"
+```
+
+**or in environment variables:**
+
+```sh
+KONG_UNTRUSTED_LUA_SANDBOX_REQUIRES="kong.tools.utils,kong.tools.gzip"
+```
+
 When it's running correctly, you should receive audit log statements in the Kong logs for this data-plane, which look like:
 
 ```

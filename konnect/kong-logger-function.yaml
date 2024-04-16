@@ -12,10 +12,20 @@ routes:
     config:
       access:
       - |-
-        kong.ctx.plugin.audit_body = kong.request.get_raw_body()
-        kong.response.exit(200, { created = true })
-      header_filter:
-      - |-
+        local utils = require("kong.tools.utils")
+        local audit_body = kong.request.get_raw_body()
+        local is_gzip = kong.request.get_header("Content-Encoding") == "gzip"
+
+        if is_gzip then
+          if not utils.inflate_gzip then
+            -- deflate package in Kong post-3.6.0
+            utils = require("kong.tools.gzip")
+          end
+
+          audit_body = utils.inflate_gzip(audit_body)
+        end
+
+        kong.log.set_serialize_value("audit_payload", audit_body or "NOT_DECODED")
         kong.log.set_serialize_value("request", nil)
         kong.log.set_serialize_value("response", nil)
         kong.log.set_serialize_value("workspace", nil)
@@ -25,7 +35,8 @@ routes:
         kong.log.set_serialize_value("tries", nil)
         kong.log.set_serialize_value("upstream_status", nil)
         kong.log.set_serialize_value("upstream_uri", nil)
-        kong.log.set_serialize_value("audit_payload", kong.ctx.plugin.audit_body)
+        kong.response.exit(200, { created = true })
+
   - name: file-log
     config:
       path: "/dev/stdout"
